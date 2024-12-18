@@ -7,11 +7,15 @@ layout (location = 2) in vec2 aTexCoord;
 uniform float time;
 uniform mat4 transformation;
 
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
 out vec4 frag;
 out vec2 TexCoord;
 
 void main(){
-    gl_Position = transformation* vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    gl_Position = projection*view*model*transformation* vec4(aPos.x, aPos.y, aPos.z, 1.0);
     
     float timeValue = time + col;
     float greenValue = sin(timeValue) +0.5f;
