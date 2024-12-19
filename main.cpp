@@ -20,7 +20,6 @@ using namespace std;
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
-// Shader shader;
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height){
     glViewport(0,0,width,height);
@@ -60,15 +59,23 @@ int main()
     }
 
     // Build and Compile Shaders into Programs
-    GLuint vertexShader = Shader::make_module("shaders/vertex.vert", GL_VERTEX_SHADER);
-    GLuint fragmentShader = Shader::make_module("shaders/fragment.frag", GL_FRAGMENT_SHADER);
+    GLuint vertexShader = Shader::make_module("shaders/colorful/vertex.vert", GL_VERTEX_SHADER);
+    GLuint fragmentShader = Shader::make_module("shaders/colorful/fragment.frag", GL_FRAGMENT_SHADER);
     GLuint modules[2] = {vertexShader, fragmentShader};
     GLuint shaderProgram = Shader::make_shader(modules);
+
+    // Second Shader Program
+    GLuint secondVertex = Shader::make_module("shaders/perspective/vertex.vert", GL_VERTEX_SHADER);
+    GLuint secondFragment = Shader::make_module("shaders/perspective/fragment.frag", GL_FRAGMENT_SHADER);
+    GLuint secondModules[2] = {secondVertex, secondFragment};
+    GLuint secondShader = Shader::make_shader(secondModules);
 
 
     // Delete Shaders
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+    glDeleteShader(secondVertex);
+    glDeleteShader(secondFragment);
 
     // Setup Vertex Data
     float triangle[] = {
@@ -90,6 +97,50 @@ int main()
         1.0f, 0.0f
     };
 
+    float vertices[] = {
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    };
+
     // Image/Texture Stuff
 
     // Binding 
@@ -108,7 +159,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-    // Actually putting in data
+    // Actually putting in data for textures
     int width, height, nrChannels;
     unsigned char *data = stbi_load("assets/container.jpg", &width, &height, &nrChannels, 0);
 
@@ -171,14 +222,39 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER,0);
     glBindVertexArray(0);
 
-    glViewport(0,0,SCR_WIDTH,SCR_HEIGHT);
 
 
     // Set textures in uniform
     glUseProgram(shaderProgram);
     glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
     glUniform1i(glGetUniformLocation(shaderProgram, "texture2"), 1);
+
+    GLuint VAO2, VBO2;
+
+    glGenVertexArrays(1, &VAO2);
+    glGenBuffers(1, &VBO2);
+
+    glBindVertexArray(VAO2);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Positions and UV for texture
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+
+    // Clear Buffer/Array
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindVertexArray(0);
+
+
+    glUseProgram(secondShader);
+    glUniform1i(glGetUniformLocation(secondShader, "texture1"), 0);
+    glUniform1i(glGetUniformLocation(secondShader, "texture2"), 1);
     
+    glViewport(0,0,SCR_WIDTH,SCR_HEIGHT);
     // Render Loop
     while(!glfwWindowShouldClose(window)){
 
@@ -194,24 +270,22 @@ int main()
         
         
         int timeLocation = glGetUniformLocation(shaderProgram, "time");
-        glUniform1f(timeLocation, glfwGetTime());
+        glUniform1f(timeLocation, 2.0f*glfwGetTime());
 
         int transformLoc = glGetUniformLocation(shaderProgram, "transformation");
-        
         int modelLoc = glGetUniformLocation(shaderProgram, "model");
-        
         int viewLoc = glGetUniformLocation(shaderProgram, "view");
-        
         int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
         
         glm::mat4 transformation = glm::mat4(1.0f);
         transformation = glm::mat4(1.0f);
-        transformation = glm::rotate(transformation, glm::radians(12.0f * (float)glfwGetTime()), glm::vec3(0.0f,0.0f,1.0f));
-
+        
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(12.0f * (float)glfwGetTime()), glm::vec3(0.0f,0.0f,1.0f));
+
         glm::mat4 view = glm::mat4(1.0f);
-        view = glm::translate(view, glm::vec3(0.0f,0.0f,-3.0f));
+        view = glm::translate(view, glm::vec3(0.0f,-0.3f,-3.0f));
         glm::mat4 projection = glm::mat4(1.0f);
         projection = glm::perspective(glm::radians(45.0f), (float) SCR_WIDTH/SCR_HEIGHT, 0.1f, 100.0f);
 
@@ -222,6 +296,41 @@ int main()
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
+
+
+
+        glUseProgram(secondShader);
+
+
+
+        transformLoc = glGetUniformLocation(shaderProgram, "transformation");
+        modelLoc = glGetUniformLocation(shaderProgram, "model");
+        viewLoc = glGetUniformLocation(shaderProgram, "view");
+        projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+        
+        
+        transformation = glm::mat4(1.0f);
+        
+        model = glm::mat4(1.0f);
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.2f));  
+        view = glm::mat4(1.0f);
+        view = glm::translate(view, glm::vec3(0.0f,0.0f,-5.0f));
+
+        projection = glm::mat4(1.0f);
+        projection = glm::perspective(glm::radians(45.0f), (float) SCR_WIDTH/SCR_HEIGHT, 0.1f, 100.0f);
+
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transformation));    
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));    
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));    
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));    
+
+        glBindVertexArray(VAO2);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        
+
+
         
         glfwPollEvents();
         glfwSwapBuffers(window);
